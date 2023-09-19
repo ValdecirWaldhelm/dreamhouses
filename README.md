@@ -134,4 +134,374 @@ OBS: TUDO CHATGPT ANTES MESMO DA AULA DO CURSO;
 BANCO DE DADOS MONGODB
 ========================
 O banco de dados MongoDB no plano free possui 500mb => resultado de muita coisa no BD para uso;
+Para criar o banco de dados no MongoDB, vai em Cluster;
+Cria um Usuário e Senha;
+depois cria um projeto;
+
+Usar o driver de instalação de NodejS e última atauzalização depois é só coipar a URL do peojeto para ser integrada;
+
+MONGOOSE
+============
+Ao fazer todo o procedimento de bando de dados do MongoDB, instalar a biblioteca do mongoose;
+npm install mongoose
+
+Ao final deve-se importar o mongoose instalado no nosso projeto;
+No arquivo principal app.js;
+import mongoose from 'mongoose';
+
+Verificando a URL do MongoDB:
+mongodb+srv://DreamHouse:DreamHouse2023@cluster0.dqagaxv.mongodb.net/    ?retryWrites=true&w=majority
+^^^^           ^^^^^       ^^^^^^                                   ^^^^^^
+DB             User        Senha                                    geralmente aqui vai nome do projeto
+
+
+Estudar mais sobre o MONGODB Documentation:
+
+Deve-se abrir um objeto na url que vem do projeto e criar mais 2 parametros:
+useNewUrlParser: true,
+useUnifiedTopology: true,
+
+Cuidado ao conectar o MongoDB, com senha de caracteres especiais;
+
+CRIANO ESTRUTURA DA API
+--------------------------
+
+Padrão MVC => Model View Controller
+
+Models => representa um tabela no banco de dados; schema da aplicação;
+
+Views => no caso de uma API Rest não é funcional pelo motivo de ser usado normalmente para front-end no caso React, Angular, ou qualquer outra tecnologia; onde representa o front-end da aplicação;
+
+Controllers => se trata de onde será tratada a requisição e onde será feita a resposta da rota;
+
+
+CRIANDO OS MODELS TABELA DE DADOS
+===================================
+OBS: Sempre criar o model deve ser com a primeira letra em maiuscula;
+Sempre também em singular, padrão;
+
+Criando primeiramente o user:
+Verificar sempre se deve importar todo o pack do mongooose,as vezes pode se usar muito da aplicação desnecessariamente, 
+Nesse caso será usado somente o Schema e o model;
+
+Cria-se a constante e dentro do new Schema , usa-se as propriedades, que no caso se trata de nome email e senha;
+Depois deve importar ao final, com o nome dessa tabela no primeiro paranetro, e no segundo a constante criada;
+
+Controller => já no caso de controller, trata a requisição e devolve uma resposta para a rota, exemplo cria-se uma rota de login(criaria um user controller?não) seria um session controller, uma sessão para fazer login e logout, se encaixando dentro de um controller;
+No caso se fosse um user controller, profile, update do profile, etc;
+
+CRIANDO O SESSION CONTROLLER
+-------------------------------
+Metodos dentro de um Controller:
+index, show, update, store, destroy;
+
+index => listagem de sessoes. Ex:
+store => criar uma nova sessão. Ex: criar um novo login;
+show => listar uma única sessão;
+update => alterar uma sessão;
+destroy => deletar uma sessão. EX: excluir um usário;
+
+Depois de usar o método store, deve-se importar o metodo, na rota;
+EX: código anterior 
+routes.get('/', (req, res) => {
+    return res.json({ ok: "RODANDO REDONDO" });
+
+}) ;
+
+código atualizado
+routes.post('/sessions', SessionController.store); 
+
+Testando a URL:
+http://localhost:3333/sessions
+
+Depois vamos agora mandar o body como json, criando um novo usário no banco de dados MongoDB;
+Primeiro deve importar o caminho para user.js, depois utiliza-lo;
+
+Ex: usando mais um campo name;
+const { name, email } = req.body;
+
+// Supondo que você tenha um modelo ou classe User com um método create
+const user = User.create({
+  name,
+  email
+});
+
+Ao mandar a requisição post criando usuário, deve-se atentar a demora do servidor do banco de dados então sua-se a função async(assíncrona) no javascript;
+EX: let user = await User.create({
+            name,
+            email
+
+        });
+
+Logo em seguida deve passar que se trata de uma função assincrona(assync);
+Ex: async store(req, res){
+        // const email = req.body.email; => parecido quando resgato uma propriedade em foreach de uma requisição;
+        // usando a descontrução
+        const { name, email } = req.body;
+
+        // criado uma variavel user, e depois chamando metodo create, criado pela propriedade email;
+        // no caso como na tabela foi colocado email, pode se usar somente email, porque não está resgtando nenhum elemento a mais;
+        // Ex: email : email 
+        let user = await User.create({
+            name,
+            email
+
+        });
+
+        return res.json({ message: 'Usuário criado com sucesso!' });
+    }
+
+    OBS: também deve se colocar a resposta de criar usuário;
+    EX: return res.json({
+            user, 
+            message: 'Usuário criado com sucesso!' 
+        });
+
+
+Resposta do CREATE
+--------------------
+{
+	"user": {
+		"name": "Teste 2", => nome do usuário
+		"email": "teste2@gmail.com", => email criado do usuário para login
+		"_id": "65085f92716b701516df4e7e", => unique ID do usuário
+		"__v": 0 => mongoDB cria esse campo para numero de vezes de atualização do usuário
+	},
+	"message": "Usuário criado com sucesso!" => mensagem criada para status OK
+}
+
+
+CRiando verificação se existe um usuário já cadastrado
+--------------------------------------------------------
+findOne => função de utilização para procurar registro no banco de dados no caso me parece que somente um na pesquisa;
+EX: class SessionController{
+    async store(req, res){
+        const { name, email } = req.body;
+
+        let user = await User.findOne({ => verifica se o email já existe
+            email
+
+        });
+
+        if(!user){ => se não existe cria um usuário com estas propriedades
+            user = await User.create({ 
+                name,
+                email
+    
+            });
+
+        }else{ => se existe retorna essa mensagem
+            return res.json({
+                message: 'Usuário já cadastrado!' 
+            });
+
+        }
+
+        return res.json({
+            user, 
+            message: 'Usuário criado com sucesso!' 
+        });
+    }
+}
+
+
+CADASTRANDO CASAS NA API
+---------------------------
+Vai em models pasta e cria um novo model, no caso se trata de criar uma casa na aplicação;
+Cria-se as proprieades do model casa, como, foto de capa, etc:
+Thumbnail => String caminho de foto no banco de dados;
+
+Exemplo de propriedade criada como Objeto:
+thumbnail: String, => propriedade
+description: String,
+price: Number,
+location: String,
+status: Boolean,
+user:{ => propriedade referenciada neste caso pelo ID do usuário;
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+}
+
+CRIANDO O CONTROLLER DE CASAS
+-------------------------------
+Depois deve-se criar o controller de casas, vai na pasta controller:
+No mesmo esquema cria com a função store no controller;
+
+Depois importa no routes.js, de mesmo modo que foi feito o user;
+E cria a rota de forma como post já que é para criar uma casa!
+
+Para que seja enviado um arquivo no Insominia, se utiliza de ao inves de body.json, usa o Multipart para fazer a requisição;
+thumbnail => choose file;
+demais campos normalmente string;
+
+já o ID deve ser mandado pelo header(cabeçalho) justamente porque quando o susuário esta logado ele já cadastra o imovel sendo resgatado o ID do usuário;
+
+Por se tratar de formato json no body da requisição não adianta usar o multipart formas do Insominia, que não vai funcionar então deve se instalar uma biblioteca chamada Multer;
+npm install multer
+
+Para poder trabalhar com multipart formas do insominia;
+
+Logo após a instalação da biblioteca cria-se um arquivo de importação de imagens, ns pasta src/;
+
+Construindo um arquivo upload.js => 
+Cria a pasta config dentro de src e depois o arquivo uploads.js;
+Depois criqa o código de export;
+EX: export default {
+    storage: multer.diskStorage({ => armazena a foto em local de disco, na prórpai aplicação;
+      destination: path.resolve(__dirname, '..', '..', '/uploads') => indica para o nodejs onde se localiza o diretório; e deve se usar o caminho separado para evitar erro "..";
+      filename: (req, file, cb) => { => chama um a função para trabalhar os reqs
+            const ext = path.extname(file.originalname); 
+            const name = path.basename(file.originalname, ext);
+
+            cb(null, `${name}-${Date.now()}${ext}}`) => função callback;
+        },
+    
+    });
+};
+
+Cria uma pasta com todas as fotos das casas cadastradas, em uploads na raiz do projeto;
+
+Ao final deve importar para routes.js, o que foi feito logo acima, junto com a biblioteca do multer;
+import multer from 'multer';
+import uploadConfig from './config/upload';
+
+Depois chama uma variavel com as configurações da imagem feita em uploads.js;
+const upload = multer(uploadConfig);
+
+Em seguida vai em routes e inclui como parametro, tem que passar a propriedade também como parametro dentro da função single();
+routes.post('/houses', upload.single('thumbnail), HouseController.store); 
+
+upload.single() => para uma imagem somente;
+upload.array() => para varias imagens;
+
+RESULTADO DO CÓDIGO PARA TESTE
+===================================
+// import House from "../models/House";
+
+class HouseController{
+    async store(req, res){
+        console.log(req.body);
+        console.log(req.file); //acesso ao file agora depois de criado;
+
+
+        return res.json({
+            message: "Tudo Certo!"
+        })
+    }
+
+
+}
+
+export default new HouseController();
+
+
+RESULTADO
+---------------
+Depois de feito tudo certinho este será o resultado:
+[Object: null prototype] {
+  description: 'Casa na planta estrutura totalmente atualizada!',
+  price: '2.000',
+  location: 'Cônego , Rua Wenceslau Braz, n927, Vila Lúcia',
+  status: 'true'
+}
+{
+  fieldname: 'thumbnail',
+  originalname: '02.jpg',
+  encoding: '7bit',
+  mimetype: 'image/jpeg',
+  destination: 'C:\\uploads',
+  filename: '02-1695068335022.jpg}',
+  path: 'C:\\uploads\\02-1695068335022.jpg}',
+  size: 130143
+}
+
+OBS: ACIMA O CÓDIGO COM ERRO DEVIDO AS CHAVES A MAIS E A BARRA USADA NO "__dirname" Cuidado!
+ERRO 1 => cb(null, `${name}-${Date.now()}${ext}}`)
+ERRO 2 =>  destination: path.resolve(__dirname, '..', '..', '/uploads'),
+
+CERTO 1 => cb(null, `${name}-${Date.now()}${ext}`)
+CERTO 2 => destination: path.resolve(__dirname, '..', '..', 'uploads'),
+
+
+CADASTRAR NO BANCO DE DADOS
+=============================
+Importar model House;
+import House from "../models/House";
+
+
+CRIANDO A URL DA IMAGEM PARA PODER TER ACESSO
+===============================================
+Tuso é criado em models House e o passo a passo está lá;
+
+Quando criar tudo ao fazer a requisição, retorna com a url da imagem mas, o caminho não existe, então deve ser criado também este caminho;
+
+Criando o caminho:
+Cria em middlewares  a rota para acesso ao arquivo;
+this.server.use(
+    '/files',
+    express.static(path.resolve(__dirname, '..', 'uploads')) => aqui indica o caminho
+)
+
+Em seguida deve ser importado o path, no app.js;
+import path from 'path';
+
+E o caminho fica pronto da imagem, testando pelo Insominia;
+
+Desta forma no front-end pode ser acessada a URL da imagem para se usada de várias formas no front-end;
+
+
+CRIANDO FILTRO DE CASAS COM SEU STATUS
+===========================================
+Deve ser utilizado o metodo index para criar esta função, vai puxar como forma de listagem;
+Em HouseController.js cria-se o metodo index resgatando a listagem de casas, abaixo um exemplo de funcionamento da função;
+EX:  async index(req, res){
+        return res.json({
+            ok: true
+        })
+    }
+
+Depois em routes.js cria-se uma rota que no caso exemplo abaixo usando GET;
+routes.get('/houses', HouseController.index);
+
+NO Insominia pode-se utilizar o query params, para enviar um parametro, no caso o status da casa para alugar true ou false;
+No projeto usei uma condição para caso o array houses esteja vazio;
+ver projeto!!
+
+
+ATUALIZANDO CASAS 
+========================
+Como todos os outros metodos vai em HouseController e cria o metodo put(update), que logo em seguida vou em routes e também crio a rota (não esquecer);
+
+Como teste usei este código:
+routes.put('/houses', HouseController.update);
+
+Mas em seguida o código exato é:
+routes.put('/houses/:house_id', upload.single('thumbnail'), HouseController.update);
+
+Porque deve se pegar o unique ID para atualizar a devida casa, junto com o upload de imagem já que o mesmo pode querer trocar as imagem da casa, e no final o metodo update do Node;
+
+Ao constuir o código sozinho observei dois erros meus:
+EX:
+const house = await House.updateOne({ _id: house_id }, {
+    user: user_id,
+    thumbnail: filename,
+    description,
+    price,
+    location,
+    status,
+})
+
+Acima usei o update, está errado porque é para atualizar somente um ou seja updateOne, depois não chamei o _id, que é a propriedade que quando faço a requisição no Insominia, acho ela lá, em seguida sim coloco todas as propriedades em um novo objeto a seguir;
+
+{
+	"house": {
+		"acknowledged": true,
+		"modifiedCount": 1,
+		"upsertedId": null,
+		"upsertedCount": 0,
+		"matchedCount": 1
+	},
+	"message": "Casa atualizada com sucesso!"
+}
+
 
