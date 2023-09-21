@@ -6,3 +6,6 @@ README.md
 
 #DOTENV
 .env
+
+#Arquivo texto descrição API
+require('dotenv').config()
