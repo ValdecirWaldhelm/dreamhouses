@@ -36,7 +36,7 @@ Depois cria-se uma constante aonde será imortados as rotas para que sejam criad
 Depois deve-se testar a API para ver se está rodando, com o comando;
 node ./src/server.js
 
-Depois vai no navagedor e vcerifica pela URL
+Depois vai no navagedor e verifica pela URL
 http://localhost:3333/
 
 EM 2022 O NODEJS AINDA NÇAO SUPORTAVA FUNCIONALIDADES NOVAS COMO "EXPORT" E "IMPORT", o curso de Nodejs é de Dezembro de 2022, mais agora atualemnte em Setembro de 2023;
@@ -503,5 +503,160 @@ Acima usei o update, está errado porque é para atualizar somente um ou seja up
 	},
 	"message": "Casa atualizada com sucesso!"
 }
+
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+PAREI NA AULA DE ATUALIZAÇÃO DAS CASAS => Verificar porque o retorno não está veindo certo como na aula, apesar de fazer as atualizações certinhas no banco de dados;
+
+
+A DEVOLUÇÃO DO OBJETO AO ATUALIZAR ALGO NO BANCO DE DADOS E TOTALMENTE COMUM JÁ QUE ME PARECE SER DO PRÓPRIO MONGODB:
+{
+	"house": {
+		"acknowledged": true,
+		"modifiedCount": 1,
+		"upsertedId": null,
+		"upsertedCount": 0,
+		"matchedCount": 1
+	},
+	"message": "Casa atualizada com sucesso!"
+}
+
+No caso o professor colocou no projeto ao invés de retornar um objeto, colocou:
+return res.send();
+
+mas utilizei pelo menos uma resposta de sucesso;
+
+
+BLOQUEANDO USUÁRIO QUE NÃO É O QUE ESTÁ LOGADO PARA NÃO EDITAR A CASA
+========================================================================
+Deve-se importar primeiro o model de user;
+
+Depois como se tem acesso dentro de update ao user_id e house_id, será relacionado ao usuário que cadastrou a casa; se no caso o user._id(como pode ser na requisição de cadastro de usuário) não corresponder ao house.user(que pode ser visto na requisição de cadastro da casa), então não vai poder editar;
+EX:
+const { user_id } = req.headers; => aqui posso resgatar o id do usuário;
+
+Resgato aqui tanto o id do usuário com a função findByID, quanto o ID de casa, com isso consigo comparar e criar a condição logo abaixo;
+const user = await User.findById(user_id);
+const houses = await House.findById(house_id);
+
+if(String(user.id) !== String(houses.user)){
+    return res.status(401).json({
+        error: "Não autorizado!",
+    });
+}
+
+CRIANDO O DESTROY
+===================
+De mesma forma vai em HouseController e cria o metodo que no caso é "destroy"(delete), configurando a resposta para ver se o metodo está sendo requisitado.
+Depois vai em routes.js, e inseri o route(rota) do metodo lá criado.
+Para fazer o teste de requisição no Insominia, uso o metodo "delete", e logo em seguida verifico se houve retorno da message.
+
+Lá no Insominia para requisição deve ser colocado no Headers o "user_id", já quem vai deletar a acsa e o suuário que está logado;
+
+Explicando o código de delete:
+
+async destroy(req, res){ => usa o metodo destroy(delete)
+    const { house_id } = req.body; => resgata o id da casa para ser deletada
+    const { user_id } = req.headers; => resgata o id do usuário e manda pelo header da requisição
+
+await House.findByIdAndDelete({ => função de achar e deletar
+    _id: house_id
+});
+
+return res.json({
+    message: "Casa excluída com sucesso!",
+})
+}
+
+Reaproveitando o código de verificação de usuário para que não exclua uma casa que não é dele;
+EX:
+Variaveis que devem ser resgatadas para criar a condição;
+const user = await User.findById(user_id);
+const houses = await House.findById(house_id);
+
+Retorno de erro mais mensagem caso o usuário não seja quem cadstrou a casa;
+if(String(user.id) !== String(houses.user)){
+    return res.status(401).json({
+        error: "Não autorizado!",
+    });
+}
+
+CRIANDO DASHBOARD
+===================
+Cria-se um controller;
+DashboardController.js
+
+Importa o House para o arquivo, cria uma class, e usa o metodo show para listar a sessão;
+
+Deve importar para routes.js não esquecer;
+import DashboardController from './controllers/DashboardController';
+
+Depois vai em routes.js e verifica se está funcionando;
+Lembrar sempre de criar a URL para cada rota especifica(dashboard);
+routes.get('/dashboard', DashboardController.show);
+
+
+ADICIONANDO O CORS
+====================
+O CORS pode limitar, a API pode ser consumida por determinado dominio se quiser, ou ainda liberar a API como pública;
+cors(): cors é um pacote npm popular (Compartilhamento de Recursos de Origem Cruzada) que simplifica o processo de permitir ou restringir solicitações HTTP de origens diferentes em sua aplicação Node.js ou Express.js. Ao chamar cors() como middleware, você habilita o tratamento de CORS em sua aplicação.
+
+OBS: VERIFICAR A DOCUMENTAÇÃO DE CORS:
+https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+
+Para adicionar o cors no nodejs usa o comando:
+npm instal cors
+
+Agora deve importar após a intalação do cors no app.js;
+depois aplicar ele dentro do midllewares;
+
+Desta forma a API se torna pública;
+this.server.use(cors());
+
+
+CRIAR RESERVA
+================
+Vai na pasta de models e cria um novo Model, depois de criar vai em Controller e cria também um arquivo para a reserva no caso;
+
+Depois de importar o "Reserve models" e construido a class no novo arquivo ReserveController, deve ir routes e criar a nova rota;
+Não esquecer de importar ;
+
+Para que em seguida possa fazer o teste no Insominia dessa nova rota;
+Usar chamado de rota encadeada(ou seja indica o que usuário quer fazer);
+routes.post('/houses/:house_id/reserve', ReserveController.store);
+
+OBSERVAÇÃO NAS REQUISIÇÕES DO INSOMINIA NÃO USAR "," SE OUVER UMA ÚNICA PROPRIEDADE;
+MAIS UMA COISA CUIDADO AO MUDAR O HEADERS DO INSMONIA PORQUE MUDA O CONTENT-TYPE(JSON) E NÃO MANDA A REQUISIÇÃO DE FORMA CORRETA O BODY;
+
+POPULATE + EXEC
+=================
+Para enviar mais informações no json usa essas duas propriedades chamadas populate e execPopulate que junta o json, como no exemplo abaixo;
+
+const populateExec = await Reserve.findOne({ _id: reserve._id}) .populate('user') .populate('house') .exec();
+ 
+return res.json({
+   populateExec,
+   message: "Casa alocada com sucesso!"
+})
+O código que você forneceu parece corrigir o erro "TypeError: reserve.populate(...).populate is not a function".
+
+Em vez de chamar .populate() diretamente no objeto reserve, você está usando Reserve.findOne({ _id: reserve._id }) para encontrar o documento no banco de dados e, em seguida, chamar .populate('user').populate('house').exec() nesse documento.
+
+Essa abordagem é a maneira correta de usar a função .populate() com o Mongoose para carregar as referências associadas ao documento reserve. Isso garante que o Mongoose possa buscar os dados relacionados no banco de dados e popula o documento reserve com os detalhes completos do usuário e da casa.
+
+Portanto, com este código, você deve conseguir carregar com sucesso os dados associados ao reserve, incluindo as informações do usuário e da casa, sem o erro que você mencionou anteriormente. Certifique-se de que o Reserve modelo Mongoose esteja corretamente definido e que a conexão com o banco de dados esteja funcionando conforme o esperado.
+
+CRIANDO UMA CONDIÇÃO PARA QUE O USUÁRIO NÃO FAÇA A MESMA RESERVA DUAS VEZES, OU QUE NÃO MANDE O ID PARA RESERVA DA CASA, OU AINDA O USUÁRIO NÃO FAÇA RESERVA EM UMA CASA QUE ELE MESMO CRIOU!
+
+CRIAR CONDIÇÃO QUE NÃO PODE FAZER RESEVAR EM UMA CASA INDISPONIVEL, TANTO NO FRONT COMO NO BACK
+
+ERRO VAGABUNDO!!!!! SyntaxError: Unexpected token } in JSON at position 29
+Quando coloca "," em apenas uma propriedade na porra do Insominia em Json Body;
+
+Importar o modo de usuário User, e depois importa o modo de casas House;
+Em seguida cria as variaveis que irão resgatar os IDS de User e House, e atraves deles cria a condição de verificação;
+
+
+
+
 
 

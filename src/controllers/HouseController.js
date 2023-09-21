@@ -1,5 +1,5 @@
-// import { query } from "express";
 import House from "../models/House";
+import User from "../models/User";
 
 class HouseController{
 
@@ -49,6 +49,15 @@ class HouseController{
         const {description, price, location, status } = req.body;
         const { user_id } = req.headers;
 
+        const user = await User.findById(user_id);
+        const houses = await House.findById(house_id);
+
+        if(String(user._id) !== String(houses.user)){
+            return res.status(401).json({
+                error: "Não autorizado!"
+            });
+        }
+
         const house = await House.updateOne({ _id: house_id }, {
             user: user_id,
             thumbnail: filename,
@@ -58,10 +67,33 @@ class HouseController{
             status,
         });
 
-        return res.json({
+        return res.send({
             house,
             message: "Casa atualizada com sucesso!"
         });
+
+    
+    }
+
+    async destroy(req, res){
+        const { house_id } = req.body;
+        const { user_id } = req.headers;
+
+        
+
+        if(String(user.id) !== String(houses.user)){
+            return res.status(401).json({
+                error: "Não autorizado!",
+            });
+        }
+
+        await House.findByIdAndDelete({
+            _id: house_id
+        });
+
+        return res.json({
+            message: "Casa excluída com sucesso!",
+        })
     }
 
 
