@@ -1,5 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
+require('dotenv').config()
 import cors from 'cors';
 import path from 'path';
 import routes from './routes';
@@ -10,7 +11,10 @@ class App{
     constructor(){
         this.server = express();
 
-        mongoose.connect('mongodb+srv://DreamHouse:DreamHouse@cluster0.dqagaxv.mongodb.net/?retryWrites=true&w=majority', {
+        const DB_USER = process.env.DB_USER;
+        const DB_PASSWORD = encodeURIComponent(process.env.DB_PASSWORD);
+
+        mongoose.connect(`mongodb+srv://${DB_USER}:${DB_PASSWORD}@cluster0.dqagaxv.mongodb.net/?retryWrites=true&w=majority`, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
