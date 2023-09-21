@@ -46,6 +46,37 @@ class ReserveController{
         })
     }
 
+    async index(req, res){
+        const { user_id } = req.headers;
+
+        const reserves = await Reserve.find({ user: user_id }).populate('house');
+
+        if (reserves.length === 0) {
+            return res.json({
+                message: "Nenhuma reserva encontrada!"
+            });
+
+        }else{
+            return res.json({
+                reserves,
+                message: "Reservas listadas!"
+            });
+
+        }
+
+    }
+
+    async destroy(req, res){
+        const { reserve_id } = req.body;
+
+        await Reserve.findByIdAndDelete({ _id: reserve_id });
+
+
+        return res.send({
+            message: "Reserva cancelada com sucesso!"
+        })
+    }
+
 }
 
 export default new ReserveController;
